@@ -1,5 +1,5 @@
 import streamlit as st
-import speech_recognition as sr
+from SpeechRecognition import speech_recognition as sr
 from langdetect import detect
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
