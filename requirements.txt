@@ -3,7 +3,6 @@ SpeechRecognition
 langdetect
 SQLAlchemy
 googletrans==4.0.0-rc1
-collections
 sqlmodel
 passlib
 pydub
