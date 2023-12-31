@@ -1,0 +1,9 @@
+streamlit
+speech_recognition
+langdetect
+sqlalchemy
+googletrans
+collections
+sqlmodel
+passlib
+pydub
