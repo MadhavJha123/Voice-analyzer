@@ -1,5 +1,7 @@
 import streamlit as st
 import speech_recognition as sr
+import sounddevice as sd
+import soundfile as sf
 from langdetect import detect
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -196,18 +198,26 @@ def dashboard(username):
         st.sidebar.text("Transcription history will be shown here")
 
 def record_audio():
-    # Adjust parameters based on your requirements
-    recognizer = sr.Recognizer()
+    duration = 10  # seconds
+    sample_rate = 44100
 
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio_data = recognizer.listen(source, timeout=10)
-
-    return audio_data
+    # Record audio using sounddevice
+    try:
+        audio_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=2, dtype='int16')
+        sd.wait()
+        return audio_data
+    except Exception as e:
+        st.error(f"Error during audio recording: {e}")
+        return None
 
 
 def recorded_audio_to_text(audio_data):
     recognizer = sr.Recognizer()
+    temp_wav_file = "temp_audio.wav"
+    sf.write(temp_wav_file, audio_data, 44100)
+
+    with sr.AudioFile(temp_wav_file) as source:
+        audio_data = recognizer.record(source)
     try:
         text = recognizer.recognize_google(audio_data)
         return text
@@ -217,6 +227,9 @@ def recorded_audio_to_text(audio_data):
     except sr.RequestError as e:
         #return f"Could not request results from Google Speech Recognition service; {e}"
         st.warning(f"Could not request results from Google Speech Recognition service; {e}")
+    finally:
+        # Clean up: remove the temporary WAV file
+        os.remove(temp_wav_file)
     
 
 def convert_audio_to_text(audio_file):
