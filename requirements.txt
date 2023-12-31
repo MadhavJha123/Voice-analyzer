@@ -1,9 +1,11 @@
 streamlit
-speech_recognition
+SpeechRecognition
 langdetect
-sqlalchemy
-googletrans
+SQLAlchemy
+googletrans==4.0.0-rc1
 collections
 sqlmodel
 passlib
 pydub
+PyAudio 
+numpy
