@@ -60,14 +60,6 @@ def audio_to_text_converter():
 
     # Initialize session state
     if 'user' not in st.session_state:
-        #st.session_state.user = {'username': None}
-        # Get or create user
-        # data['username'] = st.text_input("Enter your name to continue")
-        # submit_button = st.button("Submit")
-
-        # if submit_button:
-        #     user = get_or_create_user(data['username'])
-        #     dashboard(user.username)
         show1 = st.empty()
         choice = show1.radio("Select an option", ("Register", "Login"))
 
@@ -142,6 +134,7 @@ def dashboard(username):
             try:
                 st.subheader("Transcription:")
                 st.write(text)
+                os.remove(wav_file_path)
 
                 # Language detection and translation
                 detected_language = detect(text)
@@ -155,47 +148,44 @@ def dashboard(username):
                 display_top_phrases(useri.id,text)
 
             except:
-                st.error("error")
+                pass
 
-    # st.header("Try speaking something:")
-    # recording_button = st.button("Start Recording")
-    # info=st.empty()
-    # if recording_button:
-    #     info.warning("Recording... Speak something!")
-    #     try:
-    #         audio_data = record_audio()
-    #     except:
-    #         st.error("couldn't hear")
-    #     info.success("Recording complete!")
+    st.header("Try speaking something:")
+    recording_button = st.button("Start Recording")
+    info=st.empty()
+    if recording_button:
+        info.warning("Recording... Speak something!")
+        try:
+            audio_data = record_audio()
+            #st.audio(audio_data, format="audio/wav", start_time=0)
+            #audio_data=convert_audio_to_wav(audio_data)
+        except:
+            st.error("couldn't hear")
+        info.success("Recording complete!")
 
-        # with st.spinner("Transcribing..."):
-        #     text = recorded_audio_to_text(audio_data)
-        # info.empty()
-        # try:
-        #     st.subheader("Transcription:")
-        #     st.write(text)
+        with st.spinner("Transcribing..."):
+            #wav_file_path = convert_audio_to_wav(audio_data)
+            text = recorded_audio_to_text(audio_data)
+        info.empty()
+        try:
+            st.subheader("Transcription:")
+            st.write(text)
 
-        #     # Language detection and translation
-        #     detected_language = detect(text)
+            # Language detection and translation
+            detected_language = detect(text)
 
-        #     if detected_language != 'en':
-        #         translated_text = translate_text(text)
-        #         st.subheader("Translated to English:")
-        #         st.write(translated_text)
+            if detected_language != 'en':
+                translated_text = translate_text(text)
+                st.subheader("Translated to English:")
+                st.write(translated_text)
 
-        #     # Save the history in the sidebar
+            # Save the history in the sidebar
             # Display user-specific information and analytics
-            #save_transcription(useri.id, {'text': text, 'language': detected_language})
-            # history = get_transcriptions(useri.id)
-            # st.sidebar.header("Transcription History:")
-            # if history:
-            #     for item in history:
-            #         st.sidebar.text(item.text)
-                # display_frequent_words(useri.id)
-        #     display_top_phrases(useri.id,text)
+            save_transcription(useri.id, {'text': text, 'language': detected_language})
+            display_top_phrases(useri.id,text)
 
-        # except:
-        #     st.error("error")
+        except:
+            pass
     
     history = get_transcriptions(useri.id)
     if history:
@@ -206,6 +196,7 @@ def dashboard(username):
         st.sidebar.text("Transcription history will be shown here")
 
 def record_audio():
+    # Adjust parameters based on your requirements
     recognizer = sr.Recognizer()
 
     with sr.Microphone() as source:
@@ -214,18 +205,19 @@ def record_audio():
 
     return audio_data
 
+
 def recorded_audio_to_text(audio_data):
     recognizer = sr.Recognizer()
-
     try:
         text = recognizer.recognize_google(audio_data)
         return text
     except sr.UnknownValueError:
         #return "Speech Recognition could not understand audio."
-        st.warning("Speech Recognition could not understand audio.")
+        st.warning("Speech Recognition could not understand audio. Try again.")
     except sr.RequestError as e:
         #return f"Could not request results from Google Speech Recognition service; {e}"
         st.warning(f"Could not request results from Google Speech Recognition service; {e}")
+    
 
 def convert_audio_to_text(audio_file):
     recognizer = sr.Recognizer()
