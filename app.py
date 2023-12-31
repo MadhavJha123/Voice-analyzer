@@ -157,45 +157,45 @@ def dashboard(username):
             except:
                 st.error("error")
 
-    st.header("Try speaking something:")
-    recording_button = st.button("Start Recording")
-    info=st.empty()
-    if recording_button:
-        info.warning("Recording... Speak something!")
-        try:
-            audio_data = record_audio()
-        except:
-            st.error("couldn't hear")
-        info.success("Recording complete!")
+    # st.header("Try speaking something:")
+    # recording_button = st.button("Start Recording")
+    # info=st.empty()
+    # if recording_button:
+    #     info.warning("Recording... Speak something!")
+    #     try:
+    #         audio_data = record_audio()
+    #     except:
+    #         st.error("couldn't hear")
+    #     info.success("Recording complete!")
 
-        with st.spinner("Transcribing..."):
-            text = recorded_audio_to_text(audio_data)
-        info.empty()
-        try:
-            st.subheader("Transcription:")
-            st.write(text)
+        # with st.spinner("Transcribing..."):
+        #     text = recorded_audio_to_text(audio_data)
+        # info.empty()
+        # try:
+        #     st.subheader("Transcription:")
+        #     st.write(text)
 
-            # Language detection and translation
-            detected_language = detect(text)
+        #     # Language detection and translation
+        #     detected_language = detect(text)
 
-            if detected_language != 'en':
-                translated_text = translate_text(text)
-                st.subheader("Translated to English:")
-                st.write(translated_text)
+        #     if detected_language != 'en':
+        #         translated_text = translate_text(text)
+        #         st.subheader("Translated to English:")
+        #         st.write(translated_text)
 
-            # Save the history in the sidebar
+        #     # Save the history in the sidebar
             # Display user-specific information and analytics
-            save_transcription(useri.id, {'text': text, 'language': detected_language})
+            #save_transcription(useri.id, {'text': text, 'language': detected_language})
             # history = get_transcriptions(useri.id)
             # st.sidebar.header("Transcription History:")
             # if history:
             #     for item in history:
             #         st.sidebar.text(item.text)
                 # display_frequent_words(useri.id)
-            display_top_phrases(useri.id,text)
+        #     display_top_phrases(useri.id,text)
 
-        except:
-            st.error("error")
+        # except:
+        #     st.error("error")
     
     history = get_transcriptions(useri.id)
     if history:
