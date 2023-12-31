@@ -1,7 +1,5 @@
 import streamlit as st
 import speech_recognition as sr
-import sounddevice as sd
-import soundfile as sf
 from langdetect import detect
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -151,44 +149,6 @@ def dashboard(username):
 
             except:
                 pass
-
-    st.header("Try speaking something:")
-    recording_button = st.button("Start Recording")
-    info=st.empty()
-    if recording_button:
-        info.warning("Recording... Speak something!")
-        try:
-            audio_data = record_audio()
-            #st.audio(audio_data, format="audio/wav", start_time=0)
-            #audio_data=convert_audio_to_wav(audio_data)
-        except:
-            st.error("couldn't hear")
-        info.success("Recording complete!")
-
-        with st.spinner("Transcribing..."):
-            #wav_file_path = convert_audio_to_wav(audio_data)
-            text = recorded_audio_to_text(audio_data)
-        info.empty()
-        try:
-            st.subheader("Transcription:")
-            st.write(text)
-
-            # Language detection and translation
-            detected_language = detect(text)
-
-            if detected_language != 'en':
-                translated_text = translate_text(text)
-                st.subheader("Translated to English:")
-                st.write(translated_text)
-
-            # Save the history in the sidebar
-            # Display user-specific information and analytics
-            save_transcription(useri.id, {'text': text, 'language': detected_language})
-            display_top_phrases(useri.id,text)
-
-        except:
-            pass
-    
     history = get_transcriptions(useri.id)
     if history:
         for item in history:
@@ -197,40 +157,6 @@ def dashboard(username):
     else:
         st.sidebar.text("Transcription history will be shown here")
 
-def record_audio():
-    duration = 10  # seconds
-    sample_rate = 44100
-
-    # Record audio using sounddevice
-    try:
-        audio_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=2, dtype='int16')
-        sd.wait()
-        return audio_data
-    except Exception as e:
-        st.error(f"Error during audio recording: {e}")
-        return None
-
-
-def recorded_audio_to_text(audio_data):
-    recognizer = sr.Recognizer()
-    temp_wav_file = "temp_audio.wav"
-    sf.write(temp_wav_file, audio_data, 44100)
-
-    with sr.AudioFile(temp_wav_file) as source:
-        audio_data = recognizer.record(source)
-    try:
-        text = recognizer.recognize_google(audio_data)
-        return text
-    except sr.UnknownValueError:
-        #return "Speech Recognition could not understand audio."
-        st.warning("Speech Recognition could not understand audio. Try again.")
-    except sr.RequestError as e:
-        #return f"Could not request results from Google Speech Recognition service; {e}"
-        st.warning(f"Could not request results from Google Speech Recognition service")
-    finally:
-        # Clean up: remove the temporary WAV file
-        os.remove(temp_wav_file)
-    
 
 def convert_audio_to_text(audio_file):
     recognizer = sr.Recognizer()
@@ -301,11 +227,6 @@ def display_top_phrases(user_id,text):
 
     st.subheader("Top 3 unique Words:")
     st.write(least_spoken_words)
-
-# Function to display similar users (bonus)
-def display_similar_users(user_id):
-    # Implement similarity detection logic here (e.g., using embeddings)
-    pass
 
 def register_user(username, password):
     # Hash the password before storing it
