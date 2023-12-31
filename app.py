@@ -2,7 +2,7 @@ import streamlit as st
 import speech_recognition as sr
 from langdetect import detect
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from googletrans import Translator
 from collections import Counter
 from datetime import datetime
@@ -24,6 +24,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String)
+    transcriptions = relationship("Transcription", back_populates="user")
 
 # Define the Transcription model
 class Transcription(Base):
@@ -33,6 +34,7 @@ class Transcription(Base):
     text = Column(String)
     language = Column(String)
     timestamp = Column(DateTime, default=datetime.now)
+    user = relationship("User", back_populates="transcriptions")
 
 SQLModel.metadata.create_all(engine)
 
@@ -149,14 +151,76 @@ def dashboard(username):
 
             except:
                 pass
+
+    st.header("Try speaking something:")
+    recording_button = st.button("Start Recording")
+    info=st.empty()
+    if recording_button:
+        info.warning("Recording... Speak something!")
+        try:
+            audio_data = record_audio()
+            #st.audio(audio_data, format="audio/wav", start_time=0)
+            #audio_data=convert_audio_to_wav(audio_data)
+        except:
+            st.error("couldn't hear")
+        info.success("Recording complete!")
+
+        with st.spinner("Transcribing..."):
+            #wav_file_path = convert_audio_to_wav(audio_data)
+            text = recorded_audio_to_text(audio_data)
+        info.empty()
+        try:
+            st.subheader("Transcription:")
+            st.write(text)
+
+            # Language detection and translation
+            detected_language = detect(text)
+
+            if detected_language != 'en':
+                translated_text = translate_text(text)
+                st.subheader("Translated to English:")
+                st.write(translated_text)
+
+            # Save the history in the sidebar
+            # Display user-specific information and analytics
+            save_transcription(useri.id, {'text': text, 'language': detected_language})
+            display_top_phrases(useri.id,text)
+
+        except:
+            pass
+    
     history = get_transcriptions(useri.id)
     if history:
         for item in history:
             st.sidebar.text(item.text)
         display_frequent_words(useri.id)
+        display_similar_users(useri.id)
     else:
         st.sidebar.text("Transcription history will be shown here")
 
+def record_audio():
+    recognizer = sr.Recognizer()
+
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
+        audio_data = recognizer.listen(source, timeout=10)
+
+    return audio_data
+
+
+def recorded_audio_to_text(audio_data):
+    recognizer = sr.Recognizer()
+
+    try:
+        text = recognizer.recognize_google(audio_data)
+        return text
+    except sr.UnknownValueError:
+        #return "Speech Recognition could not understand audio."
+        st.warning("Speech Recognition could not understand audio.")
+    except sr.RequestError as e:
+        #return f"Could not request results from Google Speech Recognition service; {e}"
+        st.warning(f"Could not request results from Google Speech Recognition service")
+    
 
 def convert_audio_to_text(audio_file):
     recognizer = sr.Recognizer()
@@ -227,6 +291,30 @@ def display_top_phrases(user_id,text):
 
     st.subheader("Top 3 unique Words:")
     st.write(least_spoken_words)
+
+# Function to display similar users (bonus)
+def display_similar_users(user_id):
+    # Implement similarity detection logic here (e.g., using embeddings)
+    user = session.query(User).filter(User.id == user_id).first()
+    user_transcriptions = set(t.text for t in user.transcriptions)
+
+    all_users = session.query(User).filter(User.id != user_id).all()
+    
+    similarities = []
+    for other_user in all_users:
+        other_transcriptions = set(t.text for t in other_user.transcriptions)
+        jaccard_similarity = len(user_transcriptions.intersection(other_transcriptions)) / len(user_transcriptions.union(other_transcriptions))
+        similarities.append((other_user.username, jaccard_similarity))
+
+    # Sort users by similarity (highest similarity first)
+    similarities = sorted(similarities, key=lambda x: x[1], reverse=True)
+
+    # Display the top 3 similar users
+    if similarities:
+        st.subheader("Top 3 Similar Users:")
+        for i, (other_username, similarity) in enumerate(similarities[:3]):
+            st.write(f"{i+1}. {other_username} (Similarity: {similarity:.2f})")
+  
 
 def register_user(username, password):
     # Hash the password before storing it
