@@ -226,7 +226,7 @@ def recorded_audio_to_text(audio_data):
         st.warning("Speech Recognition could not understand audio. Try again.")
     except sr.RequestError as e:
         #return f"Could not request results from Google Speech Recognition service; {e}"
-        st.warning(f"Could not request results from Google Speech Recognition service; {e}")
+        st.warning(f"Could not request results from Google Speech Recognition service")
     finally:
         # Clean up: remove the temporary WAV file
         os.remove(temp_wav_file)
