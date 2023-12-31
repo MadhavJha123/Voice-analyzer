@@ -6,5 +6,6 @@ googletrans==4.0.0-rc1
 sqlmodel
 passlib
 pydub
+pipwin
 PyAudio 
 numpy
